@@ -1,5 +1,6 @@
 package com.elton.Project.X.BackEnd.functionary.infraestructure.database;
 
+import com.elton.Project.X.BackEnd.core.utils.contact.database.ContactTypeDataBase;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,31 +9,24 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity(name = "functionary")
-@Table(name = "functionary")
+@Entity(name = "functionary_contact")
+@Table(name = "functionary_contact")
 @EqualsAndHashCode(of = "id")
-public class FunctionaryDataBase {
+public class FunctionaryContactDataBase {
 
     @Id
     @GeneratedValue(generator = "UUID")
     private UUID id;
 
-    @Column(unique = true)
-    private String username;
+    private String label;
 
-    private String password;
-
-    private String description;
-
-    private boolean isActive;
-
-    private String identifier;
+    @OneToOne
+    private ContactTypeDataBase type;
 
     @CreationTimestamp
     private LocalDateTime modifiedAt;
@@ -40,8 +34,8 @@ public class FunctionaryDataBase {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @OneToMany
-    private List<FunctionaryContactDataBase> contacts;
-
-
+    public FunctionaryContactDataBase (String label, ContactTypeDataBase contactType) {
+        this.label = label;
+        this.type = contactType;
+    }
 }
