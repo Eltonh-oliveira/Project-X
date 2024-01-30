@@ -8,10 +8,14 @@ import com.elton.Project.X.BackEnd.functionary.infraestructure.database.Function
 import com.elton.Project.X.BackEnd.functionary.infraestructure.database.FunctionaryDataBase;
 import com.elton.Project.X.BackEnd.functionary.infraestructure.database.repository.FunctionaryContactRepository;
 import com.elton.Project.X.BackEnd.functionary.infraestructure.database.repository.FunctionaryRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,81 +36,86 @@ public class FunctionaryUseCase {
     @Autowired
     private FunctionaryContactRepository functionaryContactRepository;
 
+    @Transactional(rollbackFor = Exception.class)
     public ResponseEntity createFunctionary(FunctionaryCreate functionaryCreate) {
+        try {
+            String errors = "";
 
-        String errors = "";
-
-        if (functionaryCreate.userName().trim().equals("")) {
-            errors += USER_NAME_NOT_INFORMED + "\n";
-        }
-
-        if (functionaryCreate.password().trim().equals("")) {
-            errors += PASSWORD_NOT_INFORMED + "\n";
-        }
-
-        if (!functionaryCreate.isActive()) {
-            errors += IS_ACTIVE_MUST_BE_TRUE + "\n";
-        }
-
-        System.out.println(functionaryCreate.userName());
-        System.out.println(functionaryRepository.findByUsername(functionaryCreate.userName()));
-        if(functionaryRepository.findByUsername(functionaryCreate.userName()) != null){
-            errors += USER_NAME_ALREADY_REGISTERED + "\n";
-        }
-
-        List<String> contactsValidating = new ArrayList<>();
-
-        for (FunctionaryContact contact : functionaryCreate.contacts()) {
-            if (contact.label().trim().equals("")) {
-                errors += CONTACT_NOT_INFORMED + "\n";
-                break;
+            if (functionaryCreate.userName().trim().equals("")) {
+                errors += USER_NAME_NOT_INFORMED + "\n";
             }
 
-            if (contact.type().equals("")) {
-                errors += CONTACT_TYPE_NOT_INFORMED + "\n";
-                break;
+            if (functionaryCreate.password().trim().equals("")) {
+                errors += PASSWORD_NOT_INFORMED + "\n";
             }
 
-            if(contactTypeRepository.findById(contact.type()).isEmpty()){
-                errors += CONTACT_TYPE_NOT_EXIST + "\n";
-                break;
+            if (!functionaryCreate.isActive()) {
+                errors += IS_ACTIVE_MUST_BE_TRUE + "\n";
             }
 
-            if (contactsValidating.contains(contact.label())) {
-                errors += THERE_ARE_REPEATED_CONTACTS + "\n";
-                break;
+            System.out.println(functionaryCreate.userName());
+            System.out.println(functionaryRepository.findByUsername(functionaryCreate.userName()));
+            if (functionaryRepository.findByUsername(functionaryCreate.userName()) != null) {
+                errors += USER_NAME_ALREADY_REGISTERED + "\n";
             }
 
-            contactsValidating.add(contact.label());
+            List<String> contactsValidating = new ArrayList<>();
+
+            for (FunctionaryContact contact : functionaryCreate.contacts()) {
+                if (contact.label().trim().equals("")) {
+                    errors += CONTACT_NOT_INFORMED + "\n";
+                    break;
+                }
+
+                if (contact.type().equals("")) {
+                    errors += CONTACT_TYPE_NOT_INFORMED + "\n";
+                    break;
+                }
+
+                if (contactTypeRepository.findById(contact.type()).isEmpty()) {
+                    errors += CONTACT_TYPE_NOT_EXIST + "\n";
+                    break;
+                }
+
+                if (contactsValidating.contains(contact.label())) {
+                    errors += THERE_ARE_REPEATED_CONTACTS + "\n";
+                    break;
+                }
+
+                contactsValidating.add(contact.label());
+            }
+
+            if (!errors.trim().equals("")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+            }
+
+            List<FunctionaryContactDataBase> contacts = new ArrayList<>();
+            for (FunctionaryContact contact : functionaryCreate.contacts()) {
+                FunctionaryContactDataBase functionaryContactDataBase = new FunctionaryContactDataBase(contact.label(), contactTypeRepository.findById(contact.type()).get());
+
+                UUID uuid = UUID.randomUUID();
+                functionaryContactDataBase.setId(uuid);
+                functionaryContactRepository.save(functionaryContactDataBase);
+
+                contacts.add(functionaryContactDataBase);
+            }
+
+            FunctionaryDataBase functionaryDataBase = new FunctionaryDataBase();
+            functionaryDataBase.setUsername(functionaryCreate.userName());
+            functionaryDataBase.setPassword(functionaryCreate.password());
+            functionaryDataBase.setDescription(functionaryCreate.description());
+            functionaryDataBase.setActive(functionaryCreate.isActive());
+            functionaryDataBase.setIdentifier(functionaryCreate.identifier());
+            functionaryDataBase.setContacts(contacts);
+
+            System.out.println(functionaryDataBase);
+
+            functionaryRepository.save(functionaryDataBase);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(functionaryCreate);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro interno ao processar a solicitação");
         }
-
-        if(!errors.trim().equals("")){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
-        }
-
-        List<FunctionaryContactDataBase> contacts = new ArrayList<>();
-        for (FunctionaryContact contact : functionaryCreate.contacts()) {
-            FunctionaryContactDataBase functionaryContactDataBase = new FunctionaryContactDataBase(contact.label(), contactTypeRepository.findById(contact.type()).get());
-
-            UUID uuid = UUID.randomUUID();
-            functionaryContactDataBase.setId(uuid);
-            functionaryContactRepository.save(functionaryContactDataBase);
-
-            contacts.add(functionaryContactDataBase);
-        }
-
-        FunctionaryDataBase functionaryDataBase = new FunctionaryDataBase();
-        functionaryDataBase.setUsername(functionaryCreate.userName());
-        functionaryDataBase.setPassword(functionaryCreate.password());
-        functionaryDataBase.setDescription(functionaryCreate.description());
-        functionaryDataBase.setActive(functionaryCreate.isActive());
-        functionaryDataBase.setIdentifier(functionaryCreate.identifier());
-        functionaryDataBase.setContacts(contacts);
-
-        System.out.println(functionaryDataBase);
-
-        functionaryRepository.save(functionaryDataBase);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(functionaryCreate);
     }
 }
