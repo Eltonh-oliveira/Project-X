@@ -40,8 +40,6 @@ public class FunctionaryDataBase {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @OneToMany
+    @OneToMany(mappedBy = "functionary")
     private List<FunctionaryContactDataBase> contacts;
-
-
 }

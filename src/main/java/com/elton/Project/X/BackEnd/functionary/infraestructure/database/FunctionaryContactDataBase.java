@@ -25,8 +25,12 @@ public class FunctionaryContactDataBase {
 
     private String label;
 
-    @OneToOne
+    @ManyToOne
     private ContactTypeDataBase type;
+
+    @ManyToOne
+    @JoinColumn(name = "functionary_id")
+    private FunctionaryDataBase functionary;
 
     @CreationTimestamp
     private LocalDateTime modifiedAt;
@@ -34,8 +38,9 @@ public class FunctionaryContactDataBase {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    public FunctionaryContactDataBase (String label, ContactTypeDataBase contactType) {
+    public FunctionaryContactDataBase (String label, ContactTypeDataBase contactType, FunctionaryDataBase functionary) {
         this.label = label;
         this.type = contactType;
+        this.functionary = functionary;
     }
 }

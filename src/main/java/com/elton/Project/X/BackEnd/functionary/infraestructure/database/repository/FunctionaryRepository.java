@@ -7,5 +7,5 @@ import java.util.UUID;
 
 public interface FunctionaryRepository extends JpaRepository<FunctionaryDataBase, UUID> {
 
-    FunctionaryRepository findByUsername(String username);
+    FunctionaryDataBase findByUsername(String username);
 }

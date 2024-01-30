@@ -1,10 +1,10 @@
 package com.elton.Project.X.BackEnd.functionary.domain.entities;
 
-import com.elton.Project.X.BackEnd.functionary.infraestructure.database.FunctionaryContactDataBase;
-
 import java.util.List;
+import java.util.UUID;
 
-public record FunctionaryCreate(
+public record Functionary(
+        UUID id,
         String userName,
         String password,
         String description,
